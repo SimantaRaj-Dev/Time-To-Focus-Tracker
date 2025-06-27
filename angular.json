@@ -27,7 +27,8 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/manifest.webmanifest"
             ],
             "styles": [
               "src/styles.scss"
@@ -53,7 +54,8 @@
                   "maximumError": "4kb"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "serviceWorker": "ngsw-config.json"
             },
             "development": {
               "optimization": false,
@@ -92,7 +94,8 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/manifest.webmanifest"
             ],
             "styles": [
               "src/styles.scss"
@@ -102,5 +105,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "f104ad52-a5df-426f-a77c-a2270eb2909b"
   }
 }
