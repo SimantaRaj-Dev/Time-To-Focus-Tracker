@@ -4,8 +4,8 @@ import { StartSessionComponent } from './pages/start-session/start-session.compo
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 
 export const appRoutes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'start', component: StartSessionComponent },
-  { path: 'dashboard', component: DashboardComponent }
+  { path: '', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent) },
+  { path: 'start', loadComponent: () => import('./pages/start-session/start-session.component').then(m => m.StartSessionComponent) },
+  { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
 ];
 

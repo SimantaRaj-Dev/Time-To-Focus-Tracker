@@ -1,0 +1,25 @@
+<div class="flex items-center gap-2">
+
+  <!-- Toggle Switch -->
+  <label class="relative inline-flex items-center cursor-pointer">
+    <input
+      type="checkbox"
+      class="sr-only peer"
+      [checked]="isDarkMode"
+      (change)="toggleDarkMode($event)"
+    />
+    <div class="w-14 h-8 bg-gray-300 peer-checked:bg-gray-600 rounded-full transition-colors"></div>
+    <div
+      class="absolute left-0.5 top-0.5 w-7 h-7 bg-white dark:bg-gray-200 rounded-full shadow transition-transform transform peer-checked:translate-x-6 flex items-center justify-center"
+    >
+      <img
+        [src]="isDarkMode ? 'assets/svgs/moon.svg' : 'assets/svgs/sun.svg'"
+        class="w-4 h-4"
+        alt="Toggle icon"
+      />
+    </div>
+  </label>
+
+</div>
+
+
