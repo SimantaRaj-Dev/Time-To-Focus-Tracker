@@ -1,38 +1,115 @@
-import { Injectable } from '@angular/core';
+// src/app/services/db.service.ts
+
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import Dexie, { Table } from 'dexie';
 import { liveQuery } from 'dexie';
+import { from, Observable, of, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { FocusSession } from '../models/focus-session.model';
-import { from, Observable } from 'rxjs';
-
-class AppDB extends Dexie {
-  focusSessions!: Table<FocusSession, string>;
-  constructor() {
-    super('TimeToFocusDB');
-    this.version(1).stores({
-      focusSessions: 'id,taskName,startTime,endTime,distractionRating,tabSwitches,focusedTimeMinutes,distractedTimeMinutes'
-    });
-  }
-}
 
 @Injectable({ providedIn: 'root' })
 export class DbService {
-  private db = new AppDB();
-  sessions$: Observable<FocusSession[]> = from(
-    liveQuery(() => this.db.focusSessions.toArray())
-  );
+  private db!: Dexie;
+  private sessionsTable!: Table<FocusSession, string>;
+  public sessions$: Observable<FocusSession[]>;
 
-  add(session: FocusSession): Promise<string> {
-    return this.db.focusSessions.add(session);
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {
+    if (isPlatformBrowser(this.platformId) && 'indexedDB' in window) {
+      this.setupDexie();
+      this.sessions$ = from(
+        liveQuery(() =>
+          this.sessionsTable.orderBy('startTime').reverse().toArray()
+        )
+      ).pipe(
+        catchError(err => {
+          console.error('Error loading sessions:', err);
+          return throwError(() => new Error('Unable to load session history'));
+        })
+      );
+    } else {
+      console.warn('IndexedDB not available; sessions$ will be empty');
+      this.sessions$ = of([]);
+    }
   }
 
-  async update(session: FocusSession): Promise<void> {
-    await this.db.focusSessions.put(session);
+  /** Initialize Dexie and open the database */
+  private setupDexie(): void {
+    this.db = new Dexie('TimeToFocusDB');
+    this.db.version(2).stores({
+      focusSessions:
+        'id,taskName,startTime,endTime,tabSwitches,focusedTimeSeconds,distractedTimeSeconds'
+    });
+    // Cast the table to use string as primary key type
+    this.sessionsTable = this.db.table<FocusSession>('focusSessions') as Table<FocusSession, string>;
+    this.openDb();
   }
 
-  delete(id: string): Promise<void> {
-    return this.db.focusSessions.delete(id);
+  private async openDb(): Promise<void> {
+    try {
+      await this.db.open();
+    } catch (err) {
+      console.error('Dexie open() failed:', err);
+    }
+  }
+
+  /** CREATE or UPDATE (upsert) */
+  public async put(session: FocusSession): Promise<string> {
+    if (!this.sessionsTable) {
+      throw new Error('IndexedDB is not initialized');
+    }
+    try {
+      return await this.sessionsTable.put(session);
+    } catch (err) {
+      console.error('Error saving session:', err, session);
+      throw new Error('Failed to save session');
+    }
+  }
+
+  /** READ all sessions imperatively */
+  public async getAll(): Promise<FocusSession[]> {
+    if (!this.sessionsTable) {
+      throw new Error('IndexedDB is not initialized');
+    }
+    try {
+      return await this.sessionsTable.toArray();
+    } catch (err) {
+      console.error('Error fetching all sessions:', err);
+      throw new Error('Unable to retrieve sessions');
+    }
+  }
+
+  /** READ one session by ID */
+  public async getById(id: string): Promise<FocusSession | undefined> {
+    if (!this.sessionsTable) {
+      throw new Error('IndexedDB is not initialized');
+    }
+    try {
+      return await this.sessionsTable.get(id);
+    } catch (err) {
+      console.error(`Error fetching session by id=${id}:`, err);
+      throw new Error('Failed to load session');
+    }
+  }
+
+  /** DELETE a session by ID */
+  public async delete(id: string): Promise<void> {
+    if (!this.sessionsTable) {
+      throw new Error('IndexedDB is not initialized');
+    }
+    try {
+      await this.sessionsTable.delete(id);
+    } catch (err) {
+      console.error(`Error deleting session id=${id}:`, err);
+      throw new Error('Failed to delete session');
+    }
   }
 }
+
+
+
+
+
 
 
 
