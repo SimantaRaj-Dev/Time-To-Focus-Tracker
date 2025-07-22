@@ -1,67 +1,61 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
-import { interval, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser, CommonModule } from '@angular/common';
+import { NgChartsModule } from 'ng2-charts';
 import { FocusSessionService } from '../../services/focus-session.service';
-import { TabTrackingService } from '../../services/tab-tracking.service';
 import { FocusSession } from '../../models/focus-session.model';
-import { FormsModule } from '@angular/forms';
+import { ChartOptions, ChartData } from 'chart.js';
 
 @Component({
   selector: 'app-insight',
   standalone: true,
-  imports: [FormsModule],
+  imports: [CommonModule, NgChartsModule],
   templateUrl: './insight.component.html',
   styleUrls: ['./insight.component.scss']
 })
-export class InsightComponent implements OnInit, OnDestroy {
-  session: FocusSession | null = null;
-  duration = 0;
-  switches = 0;
-  visible = true;
-  private destroy$ = new Subject<void>();
+export class InsightComponent implements OnInit {
+  sessions: FocusSession[] = [];
+  lineData!: ChartData<'line'>;
+  pieData!: ChartData<'pie'>;
+  chartOpts: ChartOptions = { responsive: true };
+  isBrowser: boolean;
 
   constructor(
     private fs: FocusSessionService,
-    private tabs: TabTrackingService,
-    private router: Router
-  ) {}
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   ngOnInit(): void {
-    this.fs.currentSession$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(s => {
-        if (!s) this.router.navigate(['/']);
-        this.session = s;
-      });
-
-    this.tabs.tabSwitches$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(n => (this.switches = n));
-
-    this.tabs.currentTabVisible$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(v => (this.visible = v));
-
-    interval(1000)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        if (this.session) {
-          this.duration = Math.floor(
-            (Date.now() - new Date(this.session.startTime).getTime()) / 60000
-          );
-        }
-      });
+    this.fs.history$.subscribe(list => {
+      this.sessions = list.slice(-7);
+      
+      if (this.isBrowser) {
+        this.initializeCharts();
+      }
+    });
   }
 
-  async onEnd(): Promise<void> {
-    await this.fs.endSession();
-    this.router.navigate(['/history']);
-  }
+  private initializeCharts(): void {
+    const labels = this.sessions.map(s => s.startTime.toLocaleDateString());
+    const focused = this.sessions.map(s => s.focusedTimeMinutes || 0);
+    const distracted = this.sessions.map(s => s.distractedTimeMinutes || 0);
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
+    this.lineData = {
+      labels,
+      datasets: [
+        { data: focused, label: 'Focused', borderColor: 'green', fill: false },
+        { data: distracted, label: 'Distracted', borderColor: 'red', fill: false }
+      ]
+    };
+
+    const totalF = focused.reduce((a,b)=>a+b,0);
+    const totalD = distracted.reduce((a,b)=>a+b,0);
+    this.pieData = {
+      labels: ['Focused','Distracted'],
+      datasets: [{ data: [totalF, totalD], backgroundColor: ['green','red'] }]
+    };
   }
 }
+
 

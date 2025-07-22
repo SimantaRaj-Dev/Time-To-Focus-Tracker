@@ -1,1 +1,42 @@
-<p>history works!</p>
+<section
+  class="history-root flex-1 flex flex-col items-center justify-start
+         px-4 py-8 lg:px-12 w-full max-w-screen-xl mx-auto"
+>
+  <h2 class="history-title w-full text-center text-3xl font-extrabold mb-4">
+    Session History
+  </h2>
+
+  <cdk-virtual-scroll-viewport
+    itemSize="56"
+    class="history-viewport w-full flex-1"
+  >
+    <table class="history-table w-full">
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Duration</th>
+          <th>Switches</th>
+          <th>Focus %</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *cdkVirtualFor="let s of sessions">
+          <td data-label="Task">{{ s.taskName }}</td>
+          <td data-label="Start">{{ s.startTime | date:'short' }}</td>
+          <td data-label="End">{{ s.endTime | date:'short' }}</td>
+          <td data-label="Duration">{{ s.durationMinutes }}m</td>
+          <td data-label="Switches">{{ s.tabSwitches }}</td>
+          <td data-label="Focus %">
+            {{ ((s.focusedTimeMinutes/(s.durationMinutes||1))*100) | number:'1.0-0' }}%
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </cdk-virtual-scroll-viewport>
+</section>
+
+
+
+

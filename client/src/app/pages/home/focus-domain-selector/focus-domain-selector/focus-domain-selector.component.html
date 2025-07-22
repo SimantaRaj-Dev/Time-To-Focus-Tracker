@@ -1,0 +1,57 @@
+<div class="space-y-4">
+  <!-- Existing domains -->
+  <div *ngFor="let d of domains"
+    class="flex items-center p-2 border rounded bg-gray-50 dark:bg-gray-800">
+    <span class="flex-1 text-left font-mono truncate">
+      {{ d.name || d.domain }}
+    </span>
+    <button
+      type="button"
+      (click)="removeDomain(d.domain)"
+      [attr.aria-label]="'Remove ' + d.domain"
+      class="ml-2 text-red-500 hover:text-red-700 font-bold"
+    >
+      ×
+    </button>
+  </div>
+
+  <!-- New domain entry -->
+  <div class="flex items-center">
+    <input
+      [(ngModel)]="newDomain"
+      (keyup.enter)="addNewDomain()"
+      placeholder="Add new domain"
+      class="flex-1 px-2 py-1 border rounded bg-white dark:bg-gray-900 text-black dark:text-white"
+    />
+    <button
+      (click)="addNewDomain()"
+      [disabled]="!newDomain.trim()"
+      class="ml-2 px-4 py-1 bg-green-600 hover:bg-green-700 text-white rounded"
+    >
+      Add
+    </button>
+  </div>
+
+  <!-- Suggestions -->
+  <div class="mt-4">
+    <span class="text-sm text-gray-500 dark:text-gray-400">Suggestions:</span>
+    <div class="flex flex-wrap gap-2 mt-2">
+      <button
+        *ngFor="let s of domainSuggestions"
+        (click)="quickToggle(s)"
+        class="px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+      >
+        {{ s }}
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+
+

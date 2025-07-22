@@ -1,52 +1,55 @@
+// client/src/app/services/focus-session.service.ts
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
-import { FocusDbService } from './focus-db.service';
+import { DbService } from './db.service';
 import { FocusSession, SessionStatus } from '../models/focus-session.model';
 import { TabTrackingService } from './tab-tracking.service';
 
 @Injectable({ providedIn: 'root' })
 export class FocusSessionService {
-  private current$ = new BehaviorSubject<FocusSession | null>(null);
-  private history$ = new BehaviorSubject<FocusSession[]>([]);
+  current$ = new BehaviorSubject<FocusSession | null>(null);
+  history$ = this.db.sessions$;  // RxJS Observable<FocusSession[]>
   currentSession$ = this.current$.asObservable();
-  historySessions$ = this.history$.asObservable();
-
   private isBrowser: boolean;
 
   constructor(
-    private db: FocusDbService,
+    private db: DbService,
     private tabs: TabTrackingService,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) platformId: Object
   ) {
-    this.isBrowser = isPlatformBrowser(this.platformId);
+    this.isBrowser = isPlatformBrowser(platformId);
     if (this.isBrowser) {
-      this.db.getAllSessions().then(sessions => this.history$.next(sessions));
       const raw = localStorage.getItem('current-session');
       if (raw) {
-        const sess = JSON.parse(raw) as FocusSession;
-        sess.startTime = new Date(sess.startTime);
-        this.current$.next(sess);
+        const session = JSON.parse(raw) as FocusSession;
+        session.startTime = new Date(session.startTime);
+        this.current$.next(session);
       }
     }
   }
 
-  async startSession(taskName: string, focusDomains: string[]): Promise<void> {
+  /** Starts a new focus session */
+  async startSession(task: string, focusDomains: string[]): Promise<void> {
     if (!this.isBrowser) return;
+
     const session: FocusSession = {
       id: Date.now().toString(),
-      taskName,
+      taskName: task,
       startTime: new Date(),
       focusDomains,
       status: SessionStatus.ACTIVE
     };
+
     this.current$.next(session);
     localStorage.setItem('current-session', JSON.stringify(session));
     this.tabs.startTracking();
   }
 
+  /** Ends the current focus session and saves it to IndexedDB */
   async endSession(distractionRating?: number): Promise<void> {
     if (!this.isBrowser) return;
+
     const session = this.current$.value;
     if (!session) return;
 
@@ -54,13 +57,18 @@ export class FocusSessionService {
     session.distractionRating = distractionRating;
     session.status = SessionStatus.COMPLETED;
 
-    await this.db.addSession(session);
-    this.history$.next([session, ...this.history$.value]);
+    // Persist session to IndexedDB, ignore the returned key
+    await this.db.add(session);
+
+    // Update history stream
     this.current$.next(null);
     localStorage.removeItem('current-session');
     this.tabs.stopTracking();
   }
 }
+
+
+
 
 
 

@@ -1,1 +1,36 @@
-<p>insight works!</p>
+<div class="p-4 max-w-md mx-auto space-y-8">
+  <h2 class="text-2xl font-bold">Weekly Trends</h2>
+  
+  <!-- Only render charts in browser -->
+  <div *ngIf="isBrowser && lineData">
+    <canvas baseChart
+            [data]="lineData"
+            [options]="chartOpts"
+            chartType="line">
+    </canvas>
+  </div>
+  
+  <!-- Fallback for SSR -->
+  <div *ngIf="!isBrowser" class="text-center text-gray-500">
+    Charts will load once the page is fully rendered...
+  </div>
+
+  <h2 class="text-2xl font-bold mt-8">Overall Focus vs. Distraction</h2>
+  
+  <!-- Only render charts in browser -->
+  <div *ngIf="isBrowser && pieData">
+    <canvas baseChart
+            [data]="pieData"
+            [options]="chartOpts"
+            chartType="pie">
+    </canvas>
+  </div>
+  
+  <!-- Fallback for SSR -->
+  <div *ngIf="!isBrowser" class="text-center text-gray-500">
+    Chart will load once the page is fully rendered...
+  </div>
+</div>
+
+
+

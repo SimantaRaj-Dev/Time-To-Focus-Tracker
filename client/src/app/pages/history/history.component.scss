@@ -1,0 +1,143 @@
+.history-root {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-title {
+  width: 100%;
+  text-align: center;
+  margin: 1rem 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937; /* gray-800 in light */
+}
+
+.history-viewport {
+  flex: 1;
+  width: 100%;
+  height: calc(100vh - 3rem); /* subtract title height */
+  overflow: auto;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+
+  thead {
+    position: sticky;
+    top: 0;
+    background-color: #ffffff; /* header in light */
+    z-index: 1;
+
+    th {
+      padding: 0.75rem 0.5rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+      color: #1f2937; /* gray-800 heading text in light */
+    }
+  }
+
+  tbody {
+    tr {
+      background-color: #ffffff; /* default row in light */
+
+      &:nth-child(even) {
+        background-color: #f9fafb; /* zebra row in light */
+      }
+
+      td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #e5e7eb;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #374151; /* gray-700 cell text in light */
+      }
+    }
+  }
+}
+
+/* Light-mode mobile stacking */
+@media (max-width: 640px) {
+  .history-table,
+  .history-table thead,
+  .history-table tbody,
+  .history-table tr,
+  .history-table th,
+  .history-table td {
+    display: block;
+  }
+  .history-table thead {
+    display: none;
+  }
+  .history-table tr {
+    margin: 0.5rem 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background-color: #ffffff;
+  }
+  .history-table tr:nth-child(even) {
+    background-color: #f9fafb;
+  }
+  .history-table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    border: none;
+    color: #374151;
+  }
+  .history-table td::before {
+    content: attr(data-label);
+    font-weight: 500;
+    color: #6b7280;
+  }
+}
+
+/* Dark-mode overrides via global `.dark` on <html> */
+:host-context(.dark) .history-title {
+  color: #f3f4f6; /* gray-100 in dark */
+}
+:host-context(.dark) .history-table thead {
+  background-color: #18181b; /* header in dark */
+}
+:host-context(.dark) .history-table thead th {
+  color: #f3f4f6; /* gray-100 heading text in dark */
+}
+:host-context(.dark) .history-table tbody tr {
+  background-color: #18181b; /* default row in dark */
+}
+:host-context(.dark) .history-table tbody tr:nth-child(even) {
+  background-color: #262626; /* zebra row in dark */
+}
+:host-context(.dark) .history-table tbody td {
+  color: #f3f4f6; /* gray-100 cell text in dark */
+}
+
+/* Dark-mode mobile stacking */
+@media (max-width: 640px) {
+  :host-context(.dark) .history-table tr {
+    background-color: #18181b; /* card bg in dark */
+    border-color: #262626;
+  }
+  :host-context(.dark) .history-table tr:nth-child(even) {
+    background-color: #262626; /* zebra bg in dark */
+  }
+  :host-context(.dark) .history-table td {
+    color: #f3f4f6; /* text in dark */
+  }
+  :host-context(.dark) .history-table td::before {
+    color: #9ca3af;
+  }
+}
+
+
