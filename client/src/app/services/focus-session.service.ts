@@ -7,7 +7,7 @@ import { DbService } from './db.service';
 import { TabTrackingService } from './tab-tracking.service';
 import { FocusDomainsService } from './focus-domains.service';
 import { FocusSession, SessionStatus } from '../models/focus-session.model';
-import { TabEvent } from '../models/tab-event.model';
+import { TabEvent, TabEventType } from '../models/tab-event.model';
 
 @Injectable({ providedIn: 'root' })
 export class FocusSessionService {
@@ -86,24 +86,32 @@ export class FocusSessionService {
     this._current.next(null);
   }
 
-  /**
-   * Calculate total focused seconds within [start, end], using TabEvent list.
-   */
-  private calculateFocusedTime(events: TabEvent[], start: Date, end: Date): number {
+    private calculateFocusedTime(events: TabEvent[], start: Date, end: Date): number {
     let focused = 0;
     let prev = start;
+    let currentlyFocused = true;  // assume start in focus
+
     for (const ev of events) {
       const span = (ev.timestamp.getTime() - prev.getTime()) / 1000;
       // Whitelist check at calculation time
       if (this.domainsSvc.isWhitelisted(ev.domain)) {
         focused += span;
       }
+      // flip focus state on TAB_BLUR / TAB_FOCUS
+      if (ev.type === TabEventType.TAB_BLUR) currentlyFocused = false;
+      else if (ev.type === TabEventType.TAB_FOCUS) currentlyFocused = true;
+
       prev = ev.timestamp;
     }
-    // Add the last interval
-    focused += (end.getTime() - prev.getTime()) / 1000;
+
+    // final segment
+    const lastSpan = (end.getTime() - prev.getTime()) / 1000;
+    if (currentlyFocused) {
+      focused += lastSpan;
+    }
     return Math.round(focused);
   }
+
 }
 
 

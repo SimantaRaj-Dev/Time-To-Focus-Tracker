@@ -34,24 +34,22 @@ export class TabTrackingService implements OnDestroy {
     }
   }
 
-  /** Initialize DOM event listeners */
   private initListeners(): void {
-    // Visibility changes
+    // Tab loses/gains visibility
     fromEvent(document, 'visibilitychange')
       .pipe(filter(() => this.tracking), takeUntil(this.destroy$))
       .subscribe(() => {
         const type = document.hidden
-          ? TabEventType.WINDOW_BLUR
-          : TabEventType.WINDOW_FOCUS;
+          ? TabEventType.TAB_BLUR
+          : TabEventType.TAB_FOCUS;
         this.handleEvent(type);
       });
 
-    // Window focus
+    // Window-level focus/blur remain, for window‐level events
     fromEvent(window, 'focus')
       .pipe(filter(() => this.tracking), takeUntil(this.destroy$))
       .subscribe(() => this.handleEvent(TabEventType.WINDOW_FOCUS));
 
-    // Window blur
     fromEvent(window, 'blur')
       .pipe(filter(() => this.tracking), takeUntil(this.destroy$))
       .subscribe(() => this.handleEvent(TabEventType.WINDOW_BLUR));
@@ -81,32 +79,30 @@ export class TabTrackingService implements OnDestroy {
 
   /** Internal handler for all event types */
   private handleEvent(type: TabEventType): void {
-    const now   = new Date();
-    const url   = window.location.href;
-    const domain= window.location.hostname;
-    const title = document.title;
+    const now = new Date();
+    const domain = window.location.hostname;
     const isWhite = this.domainsSvc.isWhitelisted(domain);
 
-    // Increment switch count on window blur if previously focused
-    if (type === TabEventType.WINDOW_BLUR && this.isFocused) {
+    // Count a tab switch whenever you go from focused → blurred on the tab
+    if (type === TabEventType.TAB_BLUR && this.isFocused) {
       this.switchCount++;
       this.tabSwitches$.next(this.switchCount);
     }
 
-    // Update focus state
-    this.isFocused = (type === TabEventType.WINDOW_FOCUS);
+    // Update focus flag on any blur/focus event
+    this.isFocused = (type === TabEventType.TAB_FOCUS);
 
-    // Create and record the event
     const ev: TabEvent = {
-      id:        `${now.getTime()}-${type}`,
+      id: `${now.getTime()}-${type}`,
       type,
       timestamp: now,
-      url,
+      url: window.location.href,
       domain,
-      title,
-      isVisible: document.visibilityState === 'visible',
+      title: document.title,
+      isVisible: !document.hidden,
       sessionId: undefined
     };
+
     this.events.push(ev);
     this.tabEvents$.next([...this.events]);
     this.lastTime = now;
