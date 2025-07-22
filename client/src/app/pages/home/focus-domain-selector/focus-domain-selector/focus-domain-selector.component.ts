@@ -1,17 +1,9 @@
-import {
-  Component,
-  OnInit,
-  Output,
-  EventEmitter,
-  Inject,
-  PLATFORM_ID
-} from '@angular/core';
+// src/app/pages/home/focus-domain-selector/focus-domain-selector.component.ts
+
+import { Component, OnInit, Inject, PLATFORM_ID, Output, EventEmitter } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { FocusDomainsService, FocusDomain } from '../../../../services/focus-domains.service';
 import { FormsModule } from '@angular/forms';
-import {
-  FocusDomainsService,
-  FocusDomain
-} from '../../../../services/focus-domains.service';
 
 @Component({
   selector: 'app-focus-domain-selector',
@@ -21,9 +13,11 @@ import {
   styleUrls: ['./focus-domain-selector.component.scss']
 })
 export class FocusDomainSelectorComponent implements OnInit {
-  domains: FocusDomain[] = [];
-  selected = new Set<string>();
-  newDomain = '';
+  @Output() selectionChange = new EventEmitter<string[]>();  // ← add this
+
+  public domains: FocusDomain[] = [];
+  public selected = new Set<string>();
+  public newDomain = '';
   domainSuggestions = [
     'leetcode.com',
     'github.com',
@@ -31,8 +25,6 @@ export class FocusDomainSelectorComponent implements OnInit {
     'notion.so'
   ];
   private isBrowser: boolean;
-
-  @Output() selectionChange = new EventEmitter<string[]>();
 
   constructor(
     public svc: FocusDomainsService,
@@ -43,9 +35,8 @@ export class FocusDomainSelectorComponent implements OnInit {
 
   ngOnInit(): void {
     if (!this.isBrowser) return;
-    this.svc.domains.subscribe(list => {
+    this.svc.domains$.subscribe((list: FocusDomain[]) => {
       this.domains = list;
-      // Remove selections no longer in list
       for (const d of Array.from(this.selected)) {
         if (!list.some(item => item.domain === d)) {
           this.selected.delete(d);
@@ -87,12 +78,14 @@ export class FocusDomainSelectorComponent implements OnInit {
     this.svc.remove(domain);       
     this.domains = this.svc.getDomains();
     this.selected.delete(domain);
+    this.emitSelection();
   }
 
   private emitSelection(): void {
     this.selectionChange.emit(Array.from(this.selected));
   }
 }
+
 
 
 
