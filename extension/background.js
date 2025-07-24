@@ -48,7 +48,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       initializeActiveTab(msg.payload?.currentDomain);
       sendResponse({ success: true, tracking: true });
       break;
-      
+
     case 'STOP_TRACKING':
       console.log('[Extension BG] Received STOP_TRACKING');
       isTrackingEnabled = false;
@@ -193,8 +193,6 @@ chrome.alarms.onAlarm.addListener(alarm => {
     // This empty listener is enough to keep the worker alive.
   }
 });
-
-
 
 
 
