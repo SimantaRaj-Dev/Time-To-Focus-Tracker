@@ -34,8 +34,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   private isBrowser: boolean;
 
   constructor(
-    private sessionSvc: FocusSessionService,
-    private tabSvc: TabTrackingService,
+    private focusSessionService: FocusSessionService,
+    private tabService: TabTrackingService,
     private router: Router,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
@@ -43,15 +43,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.extSub = this.tabSvc.extensionReady$
+    this.extSub = this.tabService.extensionReady$
       .subscribe(flag => this.extensionReady = flag);
 
-    this.sessionSvc.currentSession$
+    this.focusSessionService.currentSession$
       .subscribe((s: FocusSession | null) => {
         this.session = s;
         if (s && this.isBrowser) {
           this.startTimer(s.startTime);
-          this.tabSub = this.tabSvc.tabSwitches$
+          this.tabSub = this.tabService.totalTabSwitches$
             .subscribe(n => this.tabSwitches = n);
         } else {
           this.stopTimer();
@@ -74,20 +74,20 @@ export class HomeComponent implements OnInit, OnDestroy {
   async onStart(): Promise<void> {
     if (!this.task.trim() || this.selectedDomains.length === 0) return;
     if (!this.extensionReady) {
-    const install = confirm(
-      'To accurately track tab switches you need our browser extension.\n\n' +
-      'Would you like to install the Time-to-Focus extension now?'
-    );
-    if (install) {
-      window.open('https://chrome.google.com/webstore/detail/your-extension-id', '_blank');
+      const confirmationFromModalBox = confirm(
+        'To accurately track tab switches you need our browser extension.\n\n' +
+        'Would you like to install the Time-to-Focus extension now?'
+      );
+      if (confirmationFromModalBox) {
+        window.open('https://chrome.google.com/webstore/detail/your-extension-id', '_blank');
     }
     return;
   }
-    await this.sessionSvc.startSession(this.task, this.selectedDomains);
+    await this.focusSessionService.startSession(this.task, this.selectedDomains);
   }
 
   async onEnd(): Promise<void> {
-    await this.sessionSvc.endSession();
+    await this.focusSessionService.endSession();
     this.router.navigate(['/history']);
   }
 

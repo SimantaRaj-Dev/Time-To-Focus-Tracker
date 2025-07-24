@@ -1,4 +1,3 @@
-// client/src/app/models/focus-session.model.ts
 export interface FocusSession {
   id?: string;
   taskName: string;
@@ -6,10 +5,13 @@ export interface FocusSession {
   endTime?: Date;
   focusDomains: string[];
   status: SessionStatus;
-  tabSwitches: number;
-  focusedTimeSeconds: number;
-  distractedTimeSeconds: number;
-  distractionRating?: number;
+  totalTabSwitches: number;
+  focusedToDistractedTabSwitches?: number;
+  distractedToFocusedTabSwitches?: number;
+  focusedToFocusedTabSwitches?: number;
+  distractedToDistractedTabSwitches?: number;
+  focusedTimeInSeconds: number;
+  distractedTimeInSeconds: number;
 }
 
 export enum SessionStatus {
@@ -20,7 +22,7 @@ export enum SessionStatus {
 }
 
 // Helpers for components
-export const toFocusedMinutes   = (s: FocusSession): number => Math.round(s.focusedTimeSeconds / 60);
-export const toDistractedMinutes = (s: FocusSession): number => Math.round(s.distractedTimeSeconds / 60);
+export const toFocusedMinutes   = (s: FocusSession): number => Math.round(s.focusedTimeInSeconds / 60);
+export const toDistractedMinutes = (s: FocusSession): number => Math.round(s.distractedTimeInSeconds / 60);
 
 
