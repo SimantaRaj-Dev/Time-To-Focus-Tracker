@@ -9,22 +9,24 @@ import { FocusDomainsService } from './focus-domains.service';
 export class TabTrackingService implements OnDestroy {
   private isBrowser: boolean;
   private tracking = false;
-  private focusedSeconds = 0;
-  private distractedSeconds = 0;
+  private focusedInSeconds = 0;
+  private distractedInSeconds = 0;
   private lastTime: Date | null = null;
   private isFocused = true;
-  private switchCount = 0;
   private events: TabEvent[] = [];
+  private focusedToDistractedTabSwitches = 0;
+  private distractedToFocusedTabSwitches = 0;
+  private focusedToFocusedTabSwitches = 0;
+  private distractedToDistractedTabSwitches = 0;
+  private totalTabSwitches = 0;
+  private previousDomain: string | null = null;
   private destroy$ = new Subject<void>();
 
-  /** Emits the current number of tab switches */
-  public tabSwitches$    = new BehaviorSubject<number>(0);
-  /** Emits the current tab events */
-  public tabEvents$      = new BehaviorSubject<TabEvent[]>([]);
-  /** Emits the current tracking status */
-  public isTracking$     = new BehaviorSubject<boolean>(false);
-  /** Emits the current extension readiness status */
+  public tabEvents$ = new BehaviorSubject<TabEvent[]>([]);
+  public isTracking$ = new BehaviorSubject<boolean>(false);
   public extensionReady$ = new BehaviorSubject<boolean>(false);
+
+  public totalTabSwitches$ = new BehaviorSubject<number>(0);
 
   constructor(
     private domainsSvc: FocusDomainsService,
@@ -70,94 +72,145 @@ export class TabTrackingService implements OnDestroy {
 
   private handleExtensionMessages(evt: MessageEvent): void {
     const msg = evt.data;
-    console.log('[TabTrackingService] <<EVENT>>', msg);
-    if (msg?.type === 'EXTENSION_TAB_EVENT') {
-      console.log('[TabTrackingService] EXTENSION_TAB_EVENT received:', msg.detail);
-    }
-    if (msg?.type === 'PING_EXTENSION') return; // ignore self-ping
+    if (msg?.type === 'PING_EXTENSION') return;
 
-    console.log('[TabTrackingService] window.message →', msg);
+    if (msg?.type === 'EXTENSION_INVALIDATED') {
+      console.error('[TabTrackingService] Extension context invalidated. Reloading page...');
+      // Optional: Alert user or auto-reload.
+      location.reload();
+    }
+
     if (msg?.type === 'EXTENSION_READY') {
       console.log('[TabTrackingService] EXTENSION_READY received');
       this.extensionReady$.next(true);
     }
     if (msg?.type === 'EXTENSION_TAB_EVENT' && this.tracking) {
-      console.log('[TabTrackingService] EXTENSION_TAB_EVENT →', msg.detail);
       this.processExtensionEvent(msg.detail);
-    }
-    if (msg?.type === 'EXTENSION_RESPONSE') {
-      console.log('[TabTrackingService] EXTENSION_RESPONSE →', msg.detail);
     }
   }
 
   private processExtensionEvent(detail: any): void {
-    console.log('[TabTrackingService] processExtensionEvent start', detail);
-    const from = detail.fromDomain;
-    const to   = detail.toDomain;
-    const isFromWhite = this.domainsSvc.isWhitelisted(from);
-    const isToWhite   = this.domainsSvc.isWhitelisted(to);
-    console.log('[TabTrackingService] fromWhite?', isFromWhite, 'toWhite?', isToWhite);
+    const comingFromFocusedTab = this.domainsSvc.isWhitelisted(detail.fromDomain);
+    const goingToFocusedTab   = this.domainsSvc.isWhitelisted(detail.toDomain);
+
+    if (detail.type === 'TAB_SWITCH') {
+      this.totalTabSwitches++;
+      this.totalTabSwitches$.next(this.totalTabSwitches);
+
+      if (comingFromFocusedTab && !goingToFocusedTab) {
+        this.focusedToDistractedTabSwitches++;
+      } else if (!comingFromFocusedTab && goingToFocusedTab) {
+        this.distractedToFocusedTabSwitches++;
+      } else if (comingFromFocusedTab && goingToFocusedTab) {
+        this.focusedToFocusedTabSwitches++;
+      } else {
+        this.distractedToDistractedTabSwitches++;
+      }
+    }
 
     let eventType: TabEventType;
 
-    if (detail.type === 'TAB_SWITCH') {
-      // Count this as a switch if either domain is whitelisted
-      if (isFromWhite || isToWhite) {
-        this.switchCount++;
-        console.log('[TabTrackingService] counted switch →', this.switchCount);
-        this.tabSwitches$.next(this.switchCount);
-      }
-
-      // Map to focus or blur relative to your PWA tab
-      if (to === window.location.hostname && isToWhite) {
-        eventType = TabEventType.TAB_FOCUS;
-      } else if (from === window.location.hostname && isFromWhite) {
-        eventType = TabEventType.TAB_BLUR;
-      } else {
-        // A switch between two other whitelisted domains:
-        // treat landing on the new domain as a focus event
-        eventType = isToWhite
-          ? TabEventType.TAB_FOCUS
-          : TabEventType.TAB_BLUR;
-      }
+    if (goingToFocusedTab) {
+      eventType = detail.type === 'WINDOW_FOCUS'
+        ? TabEventType.WINDOW_FOCUS
+        : TabEventType.TAB_FOCUS;
     } else {
-      // leave existing handling for DOMAIN_CHANGE and WINDOW_FOCUS
-      switch (detail.type) {
-        case 'DOMAIN_CHANGE':
-          eventType = TabEventType.DOMAIN_SWITCH;
-          break;
-        case 'WINDOW_FOCUS':
-          eventType = TabEventType.WINDOW_FOCUS;
-          break;
-        default:
-          console.warn('[TabTrackingService] Unknown event type', detail.type);
-          return;
-      }
+      eventType = TabEventType.TAB_BLUR;
     }
 
-    console.log('[TabTrackingService] Mapped to', eventType);
     this.handleEvent(eventType, detail.toDomain, detail.timestamp);
   }
 
+  private handleEvent(eventType: TabEventType, domain?: string, timestamp?: number): void {
+    const currentTimestamp = timestamp ? new Date(timestamp) : new Date();
+    const activeDomain = domain || window.location.hostname;
+    const isCurrentTabFocused = this.domainsSvc.isWhitelisted(activeDomain);
+    const isPreviousTabFocused = this.domainsSvc.isWhitelisted(this.previousDomain || activeDomain);
 
+    if (this.lastTime) {
+      const elapsedSeconds = (currentTimestamp.getTime() - this.lastTime.getTime()) / 1000;
+      this.updateFocusDurations(elapsedSeconds, isCurrentTabFocused, isPreviousTabFocused);
+    }
+  
+    // Determine new focus state *after* processing previous delta
+    this.isFocused = (
+      eventType === TabEventType.TAB_FOCUS ||
+      eventType === TabEventType.WINDOW_FOCUS ||
+      eventType === TabEventType.SESSION_START
+    ) && isCurrentTabFocused;
+
+    const tabEvent: TabEvent = {
+      id: `${currentTimestamp.getTime()}-${eventType}`,
+      type: eventType,
+      timestamp: currentTimestamp,
+      url: activeDomain.startsWith('http') ? activeDomain : `https://${activeDomain}`,
+      domain: activeDomain,
+      title: document.title,
+      isVisible: document.visibilityState === 'visible',
+    };
+
+    this.events.push(tabEvent);
+    this.tabEvents$.next([...this.events]);
+    this.lastTime = currentTimestamp;
+    this.previousDomain = activeDomain;
+  }
+
+  private updateFocusDurations(timeElapsed: number, isCurrentTabFocused: boolean, isPreviousTabFocused: boolean): void {
+    if (isCurrentTabFocused === isPreviousTabFocused) {
+      if (isCurrentTabFocused) {
+        this.focusedInSeconds += timeElapsed;
+      } else {
+        this.distractedInSeconds += timeElapsed;
+      }
+    } else {
+      if (!isCurrentTabFocused && isPreviousTabFocused) {
+        this.focusedInSeconds += timeElapsed;
+      } else {
+        this.distractedInSeconds += timeElapsed;
+      }
+    }
+  }
+
+
+  private reset(): void {
+    this.lastTime = null;
+    this.isFocused = true;
+    this.totalTabSwitches = 0;
+    this.focusedToDistractedTabSwitches = 0;
+    this.distractedToFocusedTabSwitches = 0;
+    this.focusedToFocusedTabSwitches = 0;
+    this.distractedToDistractedTabSwitches = 0;
+    this.focusedInSeconds = 0;
+    this.distractedInSeconds = 0;
+    this.events = [];
+    this.totalTabSwitches$.next(0);
+    this.tabEvents$.next([]);
+    console.log('[TabTrackingService] reset state');
+  }
 
   public start(): void {
-    console.log('[TabTrackingService] start()');
     if (!this.isBrowser) return;
+
     this.reset();
     this.tracking = true;
     this.isTracking$.next(true);
+
     if (this.extensionReady$.value) {
       console.log('[TabTrackingService] sending START_TRACKING');
-      window.postMessage({ type: 'START_TRACKING' }, '*');
+      window.postMessage({ 
+        type: 'START_TRACKING',
+        payload: {
+          currentDomain: window.location.hostname
+        }
+      }, '*');
     } else {
       console.warn('[TabTrackingService] extension not ready');
     }
+
     this.handleEvent(TabEventType.SESSION_START, window.location.hostname);
   }
 
   public stop(): void {
-    console.log('[TabTrackingService] stop()');
     if (!this.isBrowser) return;
 
     this.handleEvent(TabEventType.SESSION_END, window.location.hostname);
@@ -174,60 +227,32 @@ export class TabTrackingService implements OnDestroy {
     return [...this.events];
   }
 
-  public getFocusedSeconds(): number {
-    return this.focusedSeconds;
+  public getFocusedTimeInSeconds(): number {
+    return this.focusedInSeconds;
   }
 
-  public getDistractedSeconds(): number {
-    return this.distractedSeconds;
+  public getDistractedTimeInSeconds(): number {
+    return this.distractedInSeconds;
   }
 
-  private handleEvent(type: TabEventType, domain?: string, timestamp?: number): void {
-  console.log('[TabTrackingService] handleEvent()', { type, domain, timestamp });
-  const now = timestamp ? new Date(timestamp) : new Date();
-  const evDomain = domain || window.location.hostname;
-  const isWhite = this.domainsSvc.isWhitelisted(evDomain);
-  console.log('[TabTrackingService] Domain check:', evDomain, 'whitelisted?', isWhite);
-
-  // Calculate elapsed time since last event
-  if (this.lastTime) {
-    const delta = (now.getTime() - this.lastTime.getTime()) / 1000; // seconds
-    if (this.isFocused && isWhite) {
-      this.focusedSeconds += delta;
-    } else {
-      this.distractedSeconds += delta;
-    }
+  public getTotalTabSwitches(): number {
+    return this.totalTabSwitches;
   }
 
-  // Update focus state
-  this.isFocused = (type === TabEventType.TAB_FOCUS || type === TabEventType.WINDOW_FOCUS);
+  public getFocusedToDistractedTabSwitches(): number {
+    return this.focusedToDistractedTabSwitches;
+  }
 
-  // Record the event
-  const ev: TabEvent = {
-    id: `${now.getTime()}-${type}`,
-    type,
-    timestamp: now,
-    url: evDomain.startsWith('http') ? evDomain : `https://${evDomain}`,
-    domain: evDomain,
-    title: document.title,
-    isVisible: document.visibilityState === 'visible',
-    sessionId: undefined
-  };
-  this.events.push(ev);
-  this.tabEvents$.next([...this.events]);
-  this.lastTime = now;
+  public getDistractedToFocusedTabSwitches(): number {
+    return this.distractedToFocusedTabSwitches;
+  }
 
-  console.log('[TabTrackingService] updated times → focused:', this.focusedSeconds, 'distracted:', this.distractedSeconds);
-}
+  public getFocusedToFocusedTabSwitches(): number {
+    return this.focusedToFocusedTabSwitches;
+  }
 
-  private reset(): void {
-    this.lastTime = null;
-    this.isFocused = true;
-    this.switchCount = 0;
-    this.events = [];
-    this.tabSwitches$.next(0);
-    this.tabEvents$.next([]);
-    console.log('[TabTrackingService] reset state');
+  public getDistractedToDistractedTabSwitches(): number {
+    return this.distractedToDistractedTabSwitches;
   }
 
   ngOnDestroy(): void {
