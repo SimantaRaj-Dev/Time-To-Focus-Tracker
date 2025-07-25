@@ -2,8 +2,9 @@ import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
 import { DbService } from './db.service';
-import { TabTrackingService } from './tab-tracking.service';;
+import { TabTrackingService } from './tab-tracking.service';
 import { FocusSession, SessionStatus } from '../models/focus-session.model';
+import { TabEvent } from '../models/tab-event.model';
 
 @Injectable({ providedIn: 'root' })
 export class FocusSessionService {
@@ -11,6 +12,7 @@ export class FocusSessionService {
   public currentSession$ = this._current.asObservable();
   public history$ = this.dbService.sessions$;
   private isBrowser: boolean;
+  tabEvents?: TabEvent[];
 
   constructor(
     private dbService: DbService,
@@ -43,7 +45,8 @@ export class FocusSessionService {
       distractedToFocusedTabSwitches: 0,
       focusedToFocusedTabSwitches: 0,
       distractedToDistractedTabSwitches: 0,
-      totalTabSwitches: 0
+      totalTabSwitches: 0,
+      tabEvents: []
     };
     this._current.next(session);
     localStorage.setItem('current-session', JSON.stringify(session));
@@ -64,6 +67,7 @@ export class FocusSessionService {
     session.distractedToFocusedTabSwitches = this.tabService.getDistractedToFocusedTabSwitches();
     session.focusedToFocusedTabSwitches   = this.tabService.getFocusedToFocusedTabSwitches();
     session.distractedToDistractedTabSwitches = this.tabService.getDistractedToDistractedTabSwitches();
+    session.tabEvents = this.tabService.getEvents();
 
     await this.dbService.put(session);
     localStorage.removeItem('current-session');
