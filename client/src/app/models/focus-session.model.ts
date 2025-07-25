@@ -1,3 +1,4 @@
+import { TabEvent } from './tab-event.model';
 export interface FocusSession {
   id?: string;
   taskName: string;
@@ -12,6 +13,7 @@ export interface FocusSession {
   distractedToDistractedTabSwitches?: number;
   focusedTimeInSeconds: number;
   distractedTimeInSeconds: number;
+  tabEvents?: TabEvent[];
 }
 
 export enum SessionStatus {
