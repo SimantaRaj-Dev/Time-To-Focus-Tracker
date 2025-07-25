@@ -1,20 +1,10 @@
 .history-root {
-  width: 100vw;
   height: 100vh;
   margin: 0;
   padding: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-.history-title {
-  width: 100%;
-  text-align: center;
-  margin: 1rem 0 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2937; /* gray-800 in light */
 }
 
 .history-viewport {
@@ -40,6 +30,7 @@
       font-weight: 600;
       font-size: 0.875rem;
       text-align: left;
+      vertical-align: center;
       border-bottom: 1px solid #e5e7eb;
       color: #1f2937; /* gray-800 heading text in light */
     }
@@ -57,9 +48,11 @@
         padding: 0.75rem 0.5rem;
         font-size: 0.875rem;
         border-bottom: 1px solid #e5e7eb;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;          
+        word-break: break-word; 
+        overflow: visible;
+        text-align: left;
+        vertical-align: center;
         color: #374151; /* gray-700 cell text in light */
       }
     }
