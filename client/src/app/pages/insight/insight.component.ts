@@ -1,93 +1,149 @@
 // src/app/pages/insight/insight.component.ts
-
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser, CommonModule } from '@angular/common';
-import { NgChartsModule } from 'ng2-charts';
-import { FocusSessionService } from '../../services/focus-session.service';
-import {
-  FocusSession,
-  toFocusedMinutes,
-  toDistractedMinutes
-} from '../../models/focus-session.model';
-import { ChartOptions, ChartData } from 'chart.js';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import Chart, { TooltipItem } from 'chart.js/auto';
+import 'chartjs-adapter-date-fns';
+import { DbService } from '../../services/db.service';
+import { FocusSession } from '../../models/focus-session.model';
+
+interface GanttDatum {
+  x: [Date, Date];
+  y: number;
+  label: string;
+  backgroundColor: string;
+}
 
 @Component({
   selector: 'app-insight',
   standalone: true,
-  imports: [CommonModule, NgChartsModule],
+  imports: [CommonModule],
   templateUrl: './insight.component.html',
   styleUrls: ['./insight.component.scss']
 })
 export class InsightComponent implements OnInit {
-  sessions: FocusSession[] = [];
-  lineData?: ChartData<'line'>;
-  pieData?: ChartData<'pie'>;
-  chartOpts: ChartOptions = { responsive: true };
-  isBrowser: boolean;
+  public session?: FocusSession;
+  public error: string | null = null;
+  public loading = true;
+  private isBrowser: boolean;
 
   constructor(
-    private fs: FocusSessionService,
-    @Inject(PLATFORM_ID) platformId: Object
+    private route: ActivatedRoute,
+    private db: DbService,
+    private router: Router,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    this.isBrowser = isPlatformBrowser(platformId);
+    this.isBrowser = isPlatformBrowser(this.platformId);
   }
 
   ngOnInit(): void {
-    this.fs.history$.subscribe((list: FocusSession[]) => {
-      // filter only completed sessions
-      const completed = list.filter(s => s.status === 'completed');
-      // take last 7 or fewer
-      this.sessions = completed.slice(-7);
+    if (!this.isBrowser) {
+      this.loading = false;
+      return;
+    }
 
-      if (this.isBrowser && this.sessions.length > 0) {
-        this.initializeCharts();
-      } else {
-        // clear chart data if no sessions
-        this.lineData = undefined;
-        this.pieData = undefined;
-      }
-    });
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id) {
+      this.error = 'No session ID provided.';
+      this.loading = false;
+      return;
+    }
+
+    this.db.getById(id)
+      .then(sess => {
+        if (!sess) {
+          this.error = `Session "${id}" not found.`;
+        } else {
+          this.session = sess;
+          setTimeout(() => this.renderCharts(), 0);
+        }
+      })
+      .catch(() => this.error = 'Failed to load session data.')
+      .finally(() => this.loading = false);
   }
 
-  private initializeCharts(): void {
-    const labels = this.sessions.map(s =>
-      s.startTime.toLocaleDateString()
-    );
-    const focused = this.sessions.map(s => toFocusedMinutes(s));
-    const distracted = this.sessions.map(s => toDistractedMinutes(s));
+  private renderCharts(): void {
+    if (!this.session) return;
 
-    this.lineData = {
-      labels,
-      datasets: [
-        {
-          data: focused,
-          label: 'Focused (min)',
-          borderColor: 'green',
-          fill: false,
-          tension: 0.3
-        },
-        {
-          data: distracted,
-          label: 'Distracted (min)',
-          borderColor: 'red',
-          fill: false,
-          tension: 0.3
+    // Pie Chart
+    const focusedInSeconds = this.session.focusedTimeInSeconds;
+    const distractedInSeconds = this.session.distractedTimeInSeconds;
+    const pieCtx = document.getElementById('focusPie') as HTMLCanvasElement;
+    new Chart(pieCtx, {
+      type: 'pie',
+      data: {
+        labels: ['Focused', 'Distracted'],
+        datasets: [{ data: [focusedInSeconds, distractedInSeconds], backgroundColor: ['#4ade80', '#f87171'] }]
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            labels: { color: '#9E9E9E' }
+          },
+          tooltip: {
+            titleColor: '#9E9E9E',
+            bodyColor: '#9E9E9E'
+          }
         }
-      ]
-    };
+      }
+    });
 
-    const totalF = focused.reduce((sum, v) => sum + v, 0);
-    const totalD = distracted.reduce((sum, v) => sum + v, 0);
-
-    this.pieData = {
-      labels: ['Focused', 'Distracted'],
-      datasets: [
-        {
-          data: [totalF, totalD],
-          backgroundColor: ['green', 'red']
+    // Gantt Chart (as horizontal bar chart)
+    const events = this.session.tabEvents || [];
+    if (events.length > 1) {
+      const cleanEvents = events.filter(e => !!e.domain);  // Filter out undefined domains
+      const domains = Array.from(new Set(cleanEvents.map(e => e.domain)));
+      const dataset: GanttDatum[] = cleanEvents.slice(0, -1).map((e, i) => ({
+        x: [e.timestamp, cleanEvents[i + 1].timestamp],
+        y: domains.indexOf(e.domain),
+        label: e.domain,
+        backgroundColor: '#f87171'
+      }));
+      const ganttCtx = document.getElementById('tabGantt') as HTMLCanvasElement;
+      new Chart<'bar', GanttDatum[], number>(ganttCtx, {
+        type: 'bar',
+        data: { datasets: [{ label: 'Tab Activity', data: dataset, barThickness: 12, grouped: false }] },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { 
+              type: 'time', 
+              time: { unit: 'minute' },
+              ticks: { color: '#9E9E9E' },
+              grid: { color: '#696969' }
+            },
+            y: { 
+              type: 'category', 
+              labels: domains,
+              ticks: { color: '#9E9E9E' },
+              grid: { color: '#696969', drawTicks: false }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label(context: TooltipItem<'bar'>) {
+                  const raw = context.raw as GanttDatum;
+                  const [start, end] = raw.x;
+                  const durationMin = Math.round((end.getTime() - start.getTime()) / 60000);
+                  return `${raw.label}: ${durationMin} min`;
+                }
+              },
+              titleColor: '#9E9E9E',
+              bodyColor: '#9E9E9E'
+            }
+          }
         }
-      ]
-    };
+      });
+    }
+  }
+
+  public back(): void {
+    this.router.navigate(['/history']);
   }
 }
 

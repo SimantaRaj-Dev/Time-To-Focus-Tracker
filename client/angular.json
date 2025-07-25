@@ -33,6 +33,10 @@
             "styles": [
               "src/styles.scss"
             ],
+            "allowedCommonJsDependencies": [
+              "chartjs-adapter-date-fns",
+              "date-fns"
+            ],
             "scripts": [],
             "server": "src/main.server.ts",
             "prerender": true,

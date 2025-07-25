@@ -1,36 +1,52 @@
-<div class="p-4 max-w-md mx-auto space-y-8">
-  <h2 class="text-2xl font-bold">Weekly Trends</h2>
-  
-  <!-- Only render charts in browser -->
-  <div *ngIf="isBrowser && lineData">
-    <canvas baseChart
-            [data]="lineData"
-            [options]="chartOpts"
-            chartType="line">
-    </canvas>
-  </div>
-  
-  <!-- Fallback for SSR -->
-  <div *ngIf="!isBrowser" class="text-center text-gray-500">
-    Charts will load once the page is fully rendered...
-  </div>
+<!-- src/app/pages/insight/insight.component.html -->
+<ng-container *ngIf="!loading; else loadingTpl">
+  <div *ngIf="error" class="text-red-500 text-center my-8">{{ error }}</div>
+  <ng-container *ngIf="session; else noSession">
+    <section class="flex-1 flex flex-col items-start px-4 py-8 sm:px-5 w-full sm:w-[70vw] max-w-screen-xl mx-auto">
+      <!-- <button (click)="back()" class="text-blue-600 hover:text-gray-500 mb-4 top-4">← Back</button> -->
+      <h2 class="text-2xl font-bold">{{ session.taskName }}</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full my-8">
+        <!-- Pie Chart Container with fixed height -->
+        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow flex flex-col">
+          <h3 class="font-semibold mb-2">Focused vs. Distracted (in seconds)</h3>
+          <div class="w-full h-64">
+            <canvas id="focusPie" class="w-full h-full"></canvas>
+          </div>
+        </div>
+        <!-- Timeline Container -->
+        <div class="bg-white dark:bg-gray-800 p-4 rounded shadow flex flex-col">
+          <h3 class="font-semibold mb-2">Tab Activity Timeline</h3>
+          <div *ngIf="(session.tabEvents?.length || 0) > 1; else noTimeline" class="flex-1 h-64">
+            <canvas id="tabGantt" class="w-full h-full"></canvas>
+          </div>
+          <ng-template #noTimeline>
+            <div class="flex items-center justify-center h-full text-gray-500">
+              Not enough tab activity for a timeline.
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</ng-container>
 
-  <h2 class="text-2xl font-bold mt-8">Overall Focus vs. Distraction</h2>
-  
-  <!-- Only render charts in browser -->
-  <div *ngIf="isBrowser && pieData">
-    <canvas baseChart
-            [data]="pieData"
-            [options]="chartOpts"
-            chartType="pie">
-    </canvas>
+<ng-template #noSession>
+  <div class="text-center text-gray-500">Session data not available.</div>
+</ng-template>
+
+<ng-template #loadingTpl>
+  <div class="flex items-center justify-center h-full py-12 text-gray-500">
+    Loading insights…
   </div>
-  
-  <!-- Fallback for SSR -->
-  <div *ngIf="!isBrowser" class="text-center text-gray-500">
-    Chart will load once the page is fully rendered...
-  </div>
-</div>
+</ng-template>
+
+
+
+
+
+
+
+
 
 
 
