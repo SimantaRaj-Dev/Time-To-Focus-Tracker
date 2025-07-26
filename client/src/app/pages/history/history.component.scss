@@ -22,7 +22,7 @@
   thead {
     position: sticky;
     top: 0;
-    background-color: #ffffff; /* header in light */
+    background-color: #f9fafb; /* header in light */
     z-index: 1;
 
     th {
@@ -38,7 +38,7 @@
 
   tbody {
     tr {
-      background-color: #ffffff; /* default row in light */
+      background-color: #F5F5F5; /* default row in light */
 
       &:nth-child(even) {
         background-color: #f9fafb; /* zebra row in light */
@@ -107,10 +107,10 @@
   color: #f3f4f6; /* gray-100 heading text in dark */
 }
 :host-context(.dark) .history-table tbody tr {
-  background-color: #18181b; /* default row in dark */
+  background-color: #262626; /* default row in dark */
 }
 :host-context(.dark) .history-table tbody tr:nth-child(even) {
-  background-color: #262626; /* zebra row in dark */
+  background-color: #18181b; /* zebra row in dark */
 }
 :host-context(.dark) .history-table tbody td {
   color: #f3f4f6; /* gray-100 cell text in dark */

@@ -90,8 +90,8 @@ export class TabTrackingService implements OnDestroy {
   }
 
   private processExtensionEvent(detail: any): void {
-    const comingFromFocusedTab = this.domainsSvc.isWhitelisted(detail.fromDomain);
-    const goingToFocusedTab   = this.domainsSvc.isWhitelisted(detail.toDomain);
+    const comingFromFocusedTab = this.domainsSvc.isFocusedTab(detail.fromDomain);
+    const goingToFocusedTab   = this.domainsSvc.isFocusedTab(detail.toDomain);
 
     if (detail.type === 'TAB_SWITCH') {
       this.totalTabSwitches++;
@@ -124,8 +124,8 @@ export class TabTrackingService implements OnDestroy {
   private handleEvent(eventType: TabEventType, domain?: string, timestamp?: number): void {
     const currentTimestamp = timestamp ? new Date(timestamp) : new Date();
     const activeDomain = domain || window.location.hostname;
-    const isCurrentTabFocused = this.domainsSvc.isWhitelisted(activeDomain);
-    const isPreviousTabFocused = this.domainsSvc.isWhitelisted(this.previousDomain || activeDomain);
+    const isCurrentTabFocused = this.domainsSvc.isFocusedTab(activeDomain);
+    const isPreviousTabFocused = this.domainsSvc.isFocusedTab(this.previousDomain || activeDomain);
 
     if (this.lastTime) {
       const elapsedSeconds = (currentTimestamp.getTime() - this.lastTime.getTime()) / 1000;
@@ -263,10 +263,3 @@ export class TabTrackingService implements OnDestroy {
     this.destroy$.complete();
   }
 }
-
-
-
-
-
-
-

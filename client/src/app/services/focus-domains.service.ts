@@ -68,12 +68,13 @@ export class FocusDomainsService {
     localStorage.setItem(this.KEY, JSON.stringify(arr));
   }
 
-  isWhitelisted(domain: string): boolean {
+  clearDomains(): void {
+    if (!this.isBrowser) return;
+    this.domainsSub$.next([]);
+    localStorage.removeItem(this.KEY);
+  }
+
+  isFocusedTab(domain: string): boolean {
     return this.domainsSub$.value.some(x => x.domain === this.normalizeDomain(domain));
   }
 }
-
-
-
-
-
