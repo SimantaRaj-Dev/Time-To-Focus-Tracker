@@ -110,7 +110,7 @@ async function handleWindowFocusChange(winId) {
     
     const newDomain = new URL(tab.url).hostname;
     if (newDomain !== activeDomain) {
-       await broadcastEvent({
+      await broadcastEvent({
         type: 'WINDOW_FOCUS',
         fromDomain: activeDomain,
         toDomain: newDomain,
@@ -187,18 +187,9 @@ chrome.runtime.onStartup.addListener(() => {
   console.log('[Extension BG] Extension starting up.');
 });
 
-chrome.alarms.create('keepAlive', { periodInMinutes: 2 });
+chrome.alarms.create('keepAlive', { periodInMinutes: 4 });
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'keepAlive') {
     // This empty listener is enough to keep the worker alive.
   }
 });
-
-
-
-
-
-
-
-
-
