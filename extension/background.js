@@ -187,7 +187,7 @@ chrome.runtime.onStartup.addListener(() => {
   console.log('[Extension BG] Extension starting up.');
 });
 
-chrome.alarms.create('keepAlive', { periodInMinutes: 0.5 });
+chrome.alarms.create('keepAlive', { periodInMinutes: 2 });
 chrome.alarms.onAlarm.addListener(alarm => {
   if (alarm.name === 'keepAlive') {
     // This empty listener is enough to keep the worker alive.
