@@ -56,18 +56,3 @@
   console.log('[Extension Content] Script loaded and ready.');
 
 })();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
