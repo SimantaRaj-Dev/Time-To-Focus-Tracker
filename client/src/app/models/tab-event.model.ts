@@ -1,5 +1,3 @@
-// src/app/models/tab-event.model.ts
-
 export enum TabEventType {
   SESSION_START  = 'session_start',
   SESSION_END    = 'session_end',

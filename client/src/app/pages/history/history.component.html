@@ -1,8 +1,11 @@
+<!-- src/app/pages/history/history.component.html -->
 <section
   class="history-root flex-1 flex flex-col items-center justify-start
-         px-4 py-8 lg:px-12 w-full max-w-screen-xl mx-auto"
+         px-4 py-8 sm:px-12 w-[90vw] sm:w-[70vw] max-w-screen-xl mx-auto"
 >
-  <h2 class="history-title w-full text-center text-3xl font-extrabold mb-4">
+  <h2
+    class="history-title w-full text-left text-2xl font-extrabold mb-4 p-2"
+  >
     Session History
   </h2>
 
@@ -10,33 +13,54 @@
     itemSize="56"
     class="history-viewport w-full flex-1"
   >
-    <table class="history-table w-full">
-      <thead>
-        <tr>
-          <th>Task</th>
-          <th>Start</th>
-          <th>End</th>
-          <th>Duration</th>
-          <th>Switches</th>
-          <th>Focus %</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *cdkVirtualFor="let s of sessions">
-          <td data-label="Task">{{ s.taskName }}</td>
-          <td data-label="Start">{{ s.startTime | date:'short' }}</td>
-          <td data-label="End">{{ s.endTime | date:'short' }}</td>
-          <td data-label="Duration">{{ s.durationMinutes }}m</td>
-          <td data-label="Switches">{{ s.tabSwitches }}</td>
-          <td data-label="Focus %">
-            {{ ((s.focusedTimeMinutes/(s.durationMinutes||1))*100) | number:'1.0-0' }}%
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <ng-container *ngIf="sessions$ | async as sessions">
+      <ng-container *ngIf="sessions.length > 0; else noData">
+      <p class="w-full text-left mb-4 p-2">
+        Click any entry to see detailed insights for that particular task perfomed.
+      </p>
+        <table class="history-table w-full">
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Duration (min)</th>
+              <th>Tab Switches</th>
+              <th>Focus %</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              *cdkVirtualFor="let s of sessions"
+              (click)="viewInsights(s.id)"
+              class="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <td data-label="Task">{{ s.taskName }}</td>
+              <td data-label="Start">
+                <div>
+                  <div>{{ s.startTime | date:'shortTime' }}</div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">{{ s.startTime | date:'shortDate' }}</div>
+                </div>
+              </td>
+              <td data-label="End">
+                <div>
+                  <div>{{ s.endTime | date:'shortTime' }}</div>
+                  <div class="text-sm text-gray-500 dark:text-gray-400">{{ s.endTime | date:'shortDate' }}</div>
+                </div>
+              </td>
+              <td data-label="Duration">{{ s.durationMinutes }}</td>
+              <td data-label="Tab Switches">{{ s.tabSwitches }}</td>
+              <td data-label="Focus %">{{ s.focusPercentage }}%</td>
+            </tr>
+          </tbody>
+        </table>
+      </ng-container>
+    </ng-container>
+
+    <ng-template #noData>
+      <div class="text-center p-8 text-gray-500">
+        No completed sessions yet.
+      </div>
+    </ng-template>
   </cdk-virtual-scroll-viewport>
 </section>
-
-
-
-

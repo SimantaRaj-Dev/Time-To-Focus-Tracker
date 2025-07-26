@@ -1,35 +1,39 @@
 <!-- Shell Layout / App Component -->
-<div class="min-h-screen flex flex-col lg:flex-row font-sans bg-white text-black dark:bg-black dark:text-white transition-colors duration-300">
+<div class="min-h-screen flex flex-col sm:flex-row font-sans bg-white text-black dark:bg-black dark:text-white transition-colors duration-300">
 
-  <!-- Sidebar for Desktop -->
-  <aside class="hidden lg:flex flex-col w-64 h-screen bg-white dark:bg-black border-r border-gray-300 dark:border-gray-700 p-6 shadow-md">
+  <!-- Sidebar for Desktop at ≥640px -->
+  <aside 
+    class="hidden sm:flex flex-col w-[30vw] max-w-xs h-screen bg-white dark:bg-black border-r border-gray-300 dark:border-gray-700 p-6 shadow-md"
+  >
     <h1 class="text-3xl font-extrabold mb-10 tracking-tight">Time-to-Focus</h1>
     <nav class="space-y-6 text-base">
-      <a routerLink="/" class="block hover:underline"> Home</a>
-      <a routerLink="/history" class="block hover:underline"> History</a>
-      <a routerLink="/insights" class="block hover:underline"> Insights</a>
-      <a routerLink="/settings" class="block hover:underline"> Settings</a>
+      <a routerLink="/" class="flex items-center space-x-2 hover:text-gray-500 transition-colors">
+        <span class="material-icons">home</span>
+        <span>Home</span>
+      </a>
+      <a routerLink="/history" class="flex items-center space-x-2 hover:text-gray-500 transition-colors">
+        <span class="material-icons">history</span>
+        <span>History</span>
+      </a>
     </nav>
   </aside>
 
-  <!-- Main content -->
-  <main class="flex-1 flex flex-col items-center justify-start px-4 py-8 lg:px-12 w-full max-w-screen-xl mx-auto">
-    <router-outlet>
-      <div class="fixed top-4 right-4 z-50">
-        <app-dark-mode-toggle></app-dark-mode-toggle>
-      </div>
-    </router-outlet>
+  <!-- Main content: full width on mobile, 70vw on ≥640px -->
+  <main class="flex-1 flex flex-col items-center justify-start px-4 py-8 sm:px-12 w-full sm:w-[70vw] max-w-screen-xl mx-auto">
+    <div class="fixed top-4 right-4 z-50">
+      <app-dark-mode-toggle></app-dark-mode-toggle>
+    </div>
+    <router-outlet></router-outlet>
   </main>
 
-  <!-- Mobile Bottom Nav -->
-  <nav class="fixed bottom-0 w-full bg-white dark:bg-black border-t border-gray-300 dark:border-gray-700 shadow-md flex justify-around py-3 lg:hidden">
-    <a routerLink="/" class="text-center text-xs hover:font-semibold"><br>Home</a>
-    <a routerLink="/history" class="text-center text-xs hover:font-semibold"><br>History</a>
-    <a routerLink="/insights" class="text-center text-xs hover:font-semibold"><br>Insights</a>
-    <a routerLink="/settings" class="text-center text-xs hover:font-semibold"><br>Settings</a>
+  <!-- Mobile Bottom Nav: visible below 640px -->
+  <nav class="fixed bottom-0 w-full bg-white dark:bg-black border-t border-gray-300 dark:border-gray-700 shadow-md flex justify-around py-3 sm:hidden">
+    <a routerLink="/" class="text-center text-xs hover:font-semibold"><span class="material-icons">home</span><br>Home</a>
+    <a routerLink="/history" class="text-center text-xs hover:font-semibold"><span class="material-icons">history</span><br>History</a>
   </nav>
 
 </div>
+
 
 
 

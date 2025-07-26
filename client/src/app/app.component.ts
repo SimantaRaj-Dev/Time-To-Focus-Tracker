@@ -1,12 +1,12 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { RouterOutlet } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { DarkModeToggleComponent } from './shared/dark-mode-toggle/dark-mode-toggle.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, DarkModeToggleComponent],
+  imports: [RouterModule, DarkModeToggleComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

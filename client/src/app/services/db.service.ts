@@ -36,9 +36,9 @@ export class DbService {
   /** Initialize Dexie and open the database */
   private setupDexie(): void {
     this.db = new Dexie('TimeToFocusDB');
-    this.db.version(2).stores({
+    this.db.version(3).stores({
       focusSessions:
-        'id,taskName,startTime,endTime,tabSwitches,focusedTimeSeconds,distractedTimeSeconds'
+        'id,taskName,startTime,endTime,totalTabSwitches,focusedTimeInSeconds,distractedTimeInSeconds'
     });
     // Cast the table to use string as primary key type
     this.sessionsTable = this.db.table<FocusSession>('focusSessions') as Table<FocusSession, string>;

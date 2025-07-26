@@ -27,13 +27,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   session: FocusSession | null = null;
   elapsedMinutes = 0;
   tabSwitches = 0;
+  public extensionReady = false;
   private timerSub?: Subscription;
   private tabSub?: Subscription;
+  private extSub?: Subscription;
   private isBrowser: boolean;
 
   constructor(
-    private sessionSvc: FocusSessionService,
-    private tabSvc: TabTrackingService,
+    private focusSessionService: FocusSessionService,
+    private tabService: TabTrackingService,
     private router: Router,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
@@ -41,13 +43,16 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.sessionSvc.currentSession$
+    this.extSub = this.tabService.extensionReady$
+      .subscribe(flag => this.extensionReady = flag);
+
+    this.focusSessionService.currentSession$
       .subscribe((s: FocusSession | null) => {
         this.session = s;
         if (s && this.isBrowser) {
           this.startTimer(s.startTime);
-          this.tabSub = this.tabSvc.tabSwitches$
-            .subscribe((n: number) => this.tabSwitches = n);
+          this.tabSub = this.tabService.totalTabSwitches$
+            .subscribe(n => this.tabSwitches = n);
         } else {
           this.stopTimer();
           this.tabSub?.unsubscribe();
@@ -59,6 +64,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.stopTimer();
     this.tabSub?.unsubscribe();
+    this.extSub?.unsubscribe();
   }
 
   onDomainsSelected(domains: string[]): void {
@@ -67,12 +73,21 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   async onStart(): Promise<void> {
     if (!this.task.trim() || this.selectedDomains.length === 0) return;
-    await this.sessionSvc.startSession(this.task, this.selectedDomains);
-    this.router.navigate(['/insights']);
+    if (!this.extensionReady) {
+      const confirmationFromModalBox = confirm(
+        'To accurately track tab switches you need our browser extension.\n\n' +
+        'Would you like to install the Time-to-Focus extension now?'
+      );
+      if (confirmationFromModalBox) {
+        window.open('https://chrome.google.com/webstore/detail/your-extension-id', '_blank');
+    }
+    return;
+  }
+    await this.focusSessionService.startSession(this.task, this.selectedDomains);
   }
 
   async onEnd(): Promise<void> {
-    await this.sessionSvc.endSession();
+    await this.focusSessionService.endSession();
     this.router.navigate(['/history']);
   }
 

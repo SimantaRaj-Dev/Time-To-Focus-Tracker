@@ -1,20 +1,10 @@
 .history-root {
-  width: 100vw;
   height: 100vh;
   margin: 0;
   padding: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-.history-title {
-  width: 100%;
-  text-align: center;
-  margin: 1rem 0 0.5rem;
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2937; /* gray-800 in light */
 }
 
 .history-viewport {
@@ -32,7 +22,7 @@
   thead {
     position: sticky;
     top: 0;
-    background-color: #ffffff; /* header in light */
+    background-color: #f9fafb; /* header in light */
     z-index: 1;
 
     th {
@@ -40,6 +30,7 @@
       font-weight: 600;
       font-size: 0.875rem;
       text-align: left;
+      vertical-align: center;
       border-bottom: 1px solid #e5e7eb;
       color: #1f2937; /* gray-800 heading text in light */
     }
@@ -47,7 +38,7 @@
 
   tbody {
     tr {
-      background-color: #ffffff; /* default row in light */
+      background-color: #F5F5F5; /* default row in light */
 
       &:nth-child(even) {
         background-color: #f9fafb; /* zebra row in light */
@@ -57,9 +48,11 @@
         padding: 0.75rem 0.5rem;
         font-size: 0.875rem;
         border-bottom: 1px solid #e5e7eb;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        white-space: normal;          
+        word-break: break-word; 
+        overflow: visible;
+        text-align: left;
+        vertical-align: center;
         color: #374151; /* gray-700 cell text in light */
       }
     }
@@ -114,10 +107,10 @@
   color: #f3f4f6; /* gray-100 heading text in dark */
 }
 :host-context(.dark) .history-table tbody tr {
-  background-color: #18181b; /* default row in dark */
+  background-color: #262626; /* default row in dark */
 }
 :host-context(.dark) .history-table tbody tr:nth-child(even) {
-  background-color: #262626; /* zebra row in dark */
+  background-color: #18181b; /* zebra row in dark */
 }
 :host-context(.dark) .history-table tbody td {
   color: #f3f4f6; /* gray-100 cell text in dark */
@@ -139,5 +132,3 @@
     color: #9ca3af;
   }
 }
-
-
