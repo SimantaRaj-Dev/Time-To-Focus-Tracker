@@ -60,8 +60,3 @@ export class HistoryComponent implements OnInit {
     this.router.navigate(['/insights', id]);
   }
 }
-
-
-
-
-
