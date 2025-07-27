@@ -1,4 +1,3 @@
-// extension/content.js
 (function() {
   'use strict';
   
@@ -7,7 +6,7 @@
     const msg = evt.data;
     if (msg?.type === 'START_TRACKING' || msg?.type === 'STOP_TRACKING' || msg?.type === 'PING_EXTENSION') {
       try {
-        // FIX: Check if the extension context is still valid before sending.
+        // Check if the extension context is still valid before sending.
         if (!chrome.runtime?.id) {
           console.error('[Extension Content] Context invalidated. Please reload the page or extension.');
           // Notify PWA to handle (e.g., show a "Reload required" message).
@@ -39,7 +38,6 @@
 
   // Listen for messages from the background script and forward to the page (PWA).
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    // Forward relevant events to the PWA.
     if (['TAB_SWITCH', 'DOMAIN_CHANGE', 'WINDOW_FOCUS', 'EXTENSION_READY_PONG'].includes(msg.type)) {
       if (msg.type === 'EXTENSION_READY_PONG') {
         window.postMessage({ type: 'EXTENSION_READY' }, '*');
@@ -47,8 +45,6 @@
         window.postMessage({ type: 'EXTENSION_TAB_EVENT', detail: msg }, '*');
       }
     }
-    
-    // No 'return true;' needed here, as we're not sending async responses.
   });
 
   // Initial handshake to notify the PWA that the content script is loaded and ready.
