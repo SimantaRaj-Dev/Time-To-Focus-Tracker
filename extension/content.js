@@ -25,7 +25,7 @@
                 window.postMessage({ type: 'EXTENSION_INVALIDATED' }, '*');
               }
             } else {
-              console.log('[Extension Content] Message sent successfully:', m.type);
+              console.log('[Extension Content] Message sent successfully:', msg.type);
             }
           } catch (e) {
             console.error('[Extension Content] Error in sendMessage callback:', e.message);
