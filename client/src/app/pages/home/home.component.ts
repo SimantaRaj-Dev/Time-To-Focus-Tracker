@@ -22,20 +22,21 @@ import { FocusDomainSelectorComponent } from './focus-domain-selector/focus-doma
   styleUrls: ['./home.component.scss']
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  task = '';
-  selectedDomains: string[] = [];
-  session: FocusSession | null = null;
-  elapsedMinutes = 0;
-  tabSwitches = 0;
+  public taskTitle = '';
+  public selectedDomains: string[] = [];
+  public activeSession: FocusSession | null = null;
   public extensionReady = false;
-  private timerSub?: Subscription;
-  private tabSub?: Subscription;
-  private extSub?: Subscription;
-  private isBrowser: boolean;
+  public totalTabSwitchCount = 0;
+  public elapsedSeconds = 0;
+
+  private timerSubscription?: Subscription;
+  private switchSubscription?: Subscription;
+  private extSubscription?: Subscription;
+  private isBrowser = false;
 
   constructor(
-    private focusSessionService: FocusSessionService,
-    private tabService: TabTrackingService,
+    private sessionService: FocusSessionService,
+    private tracker: TabTrackingService,
     private router: Router,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
@@ -43,71 +44,104 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.extSub = this.tabService.extensionReady$
-      .subscribe(flag => this.extensionReady = flag);
+    // Restore selected domains after page reload
+    if (this.isBrowser) {
+      // Restore selected domains after page reload
+      const raw = localStorage.getItem('selectedDomains');
+      if (raw) {
+        try { this.selectedDomains = JSON.parse(raw); }
+        catch { this.selectedDomains = []; }
+      }
 
-    this.focusSessionService.currentSession$
-      .subscribe((s: FocusSession | null) => {
-        this.session = s;
-        if (s && this.isBrowser) {
-          this.startTimer(s.startTime);
-          this.tabSub = this.tabService.totalTabSwitches$
-            .subscribe(n => this.tabSwitches = n);
-        } else {
-          this.stopTimer();
-          this.tabSub?.unsubscribe();
-          this.elapsedMinutes = this.tabSwitches = 0;
+      // Subscribe to extension-ready flag
+      this.extSubscription = this.tracker.extensionReady$
+        .subscribe(flag => this.extensionReady = flag);
+    }
+
+    // Subscribe to current session
+    this.sessionService.currentSession$
+      .subscribe(session => {
+        this.activeSession = session;
+        this.resetTimerAndCount();
+
+        if (session) {
+          this.startTimer(session.startTime);
+          this.switchSubscription = this.tracker.totalTabSwitches$
+            .subscribe(n => this.totalTabSwitchCount = n);
         }
       });
   }
 
   ngOnDestroy(): void {
     this.stopTimer();
-    this.tabSub?.unsubscribe();
-    this.extSub?.unsubscribe();
+    this.switchSubscription?.unsubscribe();
   }
 
-  onDomainsSelected(domains: string[]): void {
+  onDomainsSelectionChange(domains: string[]): void {
     this.selectedDomains = domains;
   }
 
-  async onStart(): Promise<void> {
-    if (!this.task.trim() || this.selectedDomains.length === 0) return;
-    if (!this.extensionReady) {
-      const confirmationFromModalBox = confirm(
-        'To accurately track tab switches you need our browser extension.\n\n' +
-        'Would you like to install the Time-to-Focus extension now?'
-      );
-      if (confirmationFromModalBox) {
-        window.open('https://chrome.google.com/webstore/detail/your-extension-id', '_blank');
-    }
-    return;
+  get canStart(): boolean {
+    return this.taskTitle.trim().length > 0 && this.selectedDomains.length > 0;
   }
-    await this.focusSessionService.startSession(this.task, this.selectedDomains);
+
+  private promptExtensionInstall(): void{
+    if (!this.extensionReady && this.isBrowser) {
+      const ok = confirm(
+        'To track every visited tab, please install our extension.\nInstall now?'
+      );
+      if (ok) {
+        window.open(
+          'https://chrome.google.com/webstore/detail/your-extension-id',
+          '_blank'
+        );
+      }
+    }
+  }
+
+  async onStart(): Promise<void> {
+    if (!this.canStart) return;
+    if (!this.extensionReady) {
+      this.promptExtensionInstall();
+      return;
+    } 
+    await this.sessionService.startSession(this.taskTitle.trim(), this.selectedDomains);
   }
 
   async onEnd(): Promise<void> {
-    await this.focusSessionService.endSession();
+    await this.sessionService.endSession();
     this.router.navigate(['/history']);
   }
 
-  private startTimer(start: Date): void {
+  // Expose formatted time as mm:ss or hh:mm:ss
+  get elapsedDisplay(): string {
+    const sec = this.elapsedSeconds % 60;
+    const totalMin = Math.floor(this.elapsedSeconds / 60);
+    const min = totalMin % 60;
+    const hrs = Math.floor(totalMin / 60);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+
+    return hrs > 0
+      ? `${pad(hrs)}:${pad(min)}:${pad(sec)}`
+      : `${pad(min)}:${pad(sec)}`;
+  }
+
+  private startTimer(startTime: Date): void {
     this.stopTimer();
-    this.elapsedMinutes = Math.floor((Date.now() - start.getTime()) / 60000);
-    this.timerSub = interval(60000).subscribe(() => this.elapsedMinutes++);
+    // initialize elapsedSeconds based on startTime
+    this.elapsedSeconds = Math.floor((Date.now() - startTime.getTime()) / 1000);
+    // tick every second
+    this.timerSubscription = interval(1000).subscribe(() => this.elapsedSeconds++);
   }
 
   private stopTimer(): void {
-    this.timerSub?.unsubscribe();
-    this.timerSub = undefined;
+    this.timerSubscription?.unsubscribe();
+    this.timerSubscription = undefined;
+  }
+
+  private resetTimerAndCount(): void {
+    this.stopTimer();
+    this.switchSubscription?.unsubscribe();
+    this.elapsedSeconds = this.totalTabSwitchCount = 0;
   }
 }
-
-
-
-
-
-
-
-
-

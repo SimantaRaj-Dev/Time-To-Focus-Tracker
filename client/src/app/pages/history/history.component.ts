@@ -5,6 +5,7 @@ import { ScrollingModule } from '@angular/cdk/scrolling';
 import { Router } from '@angular/router';
 import { FocusSessionService } from '../../services/focus-session.service';
 import { map, Observable } from 'rxjs';
+
 interface HistoryView {
   id: string;
   taskName: string;

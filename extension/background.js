@@ -1,5 +1,3 @@
-// extension/background.js
-
 // --- Global State ---
 let isTrackingEnabled = false;
 let activeTabId = null;
@@ -159,11 +157,11 @@ async function getTabSafely(tabId) {
 
 async function broadcastEvent(message) {
   try {
-    // FIX: Narrow query to only HTTP/HTTPS tabs to reduce unnecessary sends.
+    // Narrow query to only HTTP/HTTPS tabs to reduce unnecessary sends.
     // This minimizes "receiving end does not exist" errors.
     const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
     for (const tab of tabs) {
-      // FIX: Use Promise-based sendMessage with .catch to handle rejections gracefully.
+      // Use Promise-based sendMessage with .catch to handle rejections gracefully.
       // No await here to avoid blocking—fire and forget.
       chrome.tabs.sendMessage(tab.id, message)
         .catch((error) => {

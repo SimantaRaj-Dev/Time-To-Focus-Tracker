@@ -1,9 +1,7 @@
-// src/app/pages/home/focus-domain-selector/focus-domain-selector.component.ts
-
 import { Component, OnInit, Inject, PLATFORM_ID, Output, EventEmitter } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { FocusDomainsService, FocusDomain } from '../../../../services/focus-domains.service';
 import { FormsModule } from '@angular/forms';
+import { FocusDomainsService, FocusDomain } from '../../../../services/focus-domains.service';
 
 @Component({
   selector: 'app-focus-domain-selector',
@@ -13,21 +11,17 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./focus-domain-selector.component.scss']
 })
 export class FocusDomainSelectorComponent implements OnInit {
-  @Output() selectionChange = new EventEmitter<string[]>();  // ← add this
-
-  public domains: FocusDomain[] = [];
-  public selected = new Set<string>();
-  public newDomain = '';
-  domainSuggestions = [
-    'leetcode.com',
-    'github.com',
-    'docs.google.com',
-    'notion.so'
+  @Output() domainsSelectionChange = new EventEmitter<string[]>();
+  public availableDomains: FocusDomain[] = [];
+  public selectedDomainSet = new Set<string>();
+  public newDomainInput = '';
+  public suggestions = [
+    'leetcode.com', 'github.com', 'docs.google.com', 'notion.so'
   ];
-  private isBrowser: boolean;
+  private isBrowser = false;
 
   constructor(
-    public svc: FocusDomainsService,
+    private domainsService: FocusDomainsService,
     @Inject(PLATFORM_ID) platformId: Object
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
@@ -35,61 +29,89 @@ export class FocusDomainSelectorComponent implements OnInit {
 
   ngOnInit(): void {
     if (!this.isBrowser) return;
-    this.svc.domains$.subscribe((list: FocusDomain[]) => {
-      this.domains = list;
-      for (const d of Array.from(this.selected)) {
-        if (!list.some(item => item.domain === d)) {
-          this.selected.delete(d);
+
+    // Subscribe to persisted domain list
+    this.domainsService.domains$
+      .subscribe(list => {
+        this.availableDomains = list;
+        // Clean out any selected entries no longer in the list
+        for (const domain of Array.from(this.selectedDomainSet)) {
+          if (!list.some(fd => fd.domain === domain)) {
+            this.selectedDomainSet.delete(domain);
+          }
         }
-      }
-      this.emitSelection();
-    });
-  }
+        this.emitChanges();
+      });
 
-  toggle(domain: string): void {
-    this.selected.has(domain)
-      ? this.selected.delete(domain)
-      : this.selected.add(domain);
-    this.emitSelection();
-  }
-
-  addNewDomain(): void {
-    if (!this.isBrowser) return;
-    const d = this.svc.normalizeDomain(this.newDomain);
-    if (d && !this.selected.has(d)) {
-      this.svc.add(d);
-      this.selected.add(d);
-      this.emitSelection();
+    // Restore selection after page reload
+    const raw = localStorage.getItem('selectedDomains');
+    if (raw) {
+      try {
+        JSON.parse(raw).forEach((d: string) => this.selectedDomainSet.add(d));
+        this.emitChanges();
+      } catch {}
     }
-    this.newDomain = '';
   }
 
-  quickToggle(sug: string): void {
-    if (!this.isBrowser) return;
-    const d = this.svc.normalizeDomain(sug);
-    if (!this.domains.some(fd => fd.domain === d)) {
-      this.svc.add(d);
+  toggleDomain(domain: string): void {
+    if (this.selectedDomainSet.has(domain)) {
+      this.selectedDomainSet.delete(domain);
+    } else {
+      this.selectedDomainSet.add(domain);
     }
-    this.toggle(d);
+    this.persistSelection();
+    this.emitChanges();
+  }
+
+  addDomain(normalized: string | ''): void {
+    if (!this.isBrowser) return;
+    normalized === '' ? this.domainsService.normalizeDomain(this.newDomainInput) : normalized;
+    if (!this.selectedDomainSet.has(normalized)) {
+      this.domainsService.add(normalized);
+      this.selectedDomainSet.add(normalized);
+      this.persistSelection();
+      this.emitChanges();
+    }
+    this.newDomainInput = '';
+  }
+
+  quickToggle(domain: string): void {
+    if (!this.isBrowser) return;
+    debugger;
+    const normalized = this.domainsService.normalizeDomain(domain);
+    if (!this.availableDomains.some(fd => fd.domain === normalized)) {
+      this.addDomain(normalized);
+      this.persistSelection();
+    }
+    else {
+      this.domainsService.remove(normalized);
+    }
   }
 
   removeDomain(domain: string): void {
     if (!this.isBrowser) return;
-    this.svc.remove(domain);       
-    this.domains = this.svc.getDomains();
-    this.selected.delete(domain);
-    this.emitSelection();
+    this.domainsService.remove(domain);
+    this.availableDomains = this.domainsService.getDomains();
+    this.selectedDomainSet.delete(domain);
+    this.persistSelection();
+    this.emitChanges();
   }
 
-  private emitSelection(): void {
-    this.selectionChange.emit(Array.from(this.selected));
+  clearAllSelections(): void {
+    this.selectedDomainSet.clear();
+    this.persistSelection();
+    this.emitChanges();
+  }
+
+  private emitChanges(): void {
+    this.domainsSelectionChange.emit(Array.from(this.selectedDomainSet));
+  }
+
+  private persistSelection(): void {
+    if (!this.isBrowser) return;
+    localStorage.setItem(
+      'selectedDomains',
+      JSON.stringify(Array.from(this.selectedDomainSet))
+    );
   }
 }
-
-
-
-
-
-
-
-

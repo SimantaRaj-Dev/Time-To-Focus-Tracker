@@ -72,6 +72,7 @@ export class FocusDomainsService {
     if (!this.isBrowser) return;
     this.domainsSub$.next([]);
     localStorage.removeItem(this.KEY);
+    localStorage.removeItem('selectedDomains');
   }
 
   isFocusedTab(domain: string): boolean {
