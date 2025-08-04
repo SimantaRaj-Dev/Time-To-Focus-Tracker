@@ -88,14 +88,23 @@ export class HomeComponent implements OnInit, OnDestroy {
   private promptExtensionInstall(): void{
     if (!this.extensionReady && this.isBrowser) {
       const ok = confirm(
-        'To track every visited tab, please install our extension.\nInstall now?'
+        `We are sorry :( , Chrome extension is yet not published for this app.\nPlease visit github repository for more info.`
       );
-      if (ok) {
+      if(ok) {
         window.open(
-          'https://chrome.google.com/webstore/detail/your-extension-id',
-          '_blank'
-        );
+          'https://github.com/Simanta-Developer/Time-To-Focus-Tracker'
+        )
       }
+      // TODO: Replace the above snippet with the chrome extension prompt install link.
+      // const ok = confirm(
+      //   'To track every visited tab, please install our extension.\nInstall now?'
+      // );
+      // if (ok) {
+      //   window.open(
+      //     'https://chrome.google.com/webstore/detail/your-extension-id',
+      //     '_blank'
+      //   );
+      // }
     }
   }
 
