@@ -88,8 +88,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private promptExtensionInstall(): void{
     if (!this.extensionReady && this.isBrowser) {
       const ok = confirm(
-        `We are sorry :( , Chrome extension is yet not published for this app. \n
-        please visit github repository for this app to get the latest updates.`
+        `We are sorry :( , Chrome extension is yet not published for this app.\nPlease visit github repository for more info.`
       );
       if(ok) {
         window.open(
