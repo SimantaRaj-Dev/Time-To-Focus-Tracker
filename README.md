@@ -5,6 +5,7 @@ A comprehensive productivity tracking application that helps you monitor your fo
 **Note**: 
 - **Chrome Extension**: Currently pending Chrome Web Store review. The extension will provide enhanced tracking capabilities once approved.
 - **Cloud Integration**: Server-side features for data backup and synchronization are currently in development.
+- **Login Functionality**: It is currently in development.
 - **Current Status**: The application operates in offline-first mode with local data storage and basic tracking capabilities.
 
 ## 🚀 Features
