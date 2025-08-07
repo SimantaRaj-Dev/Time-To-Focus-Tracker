@@ -3,9 +3,9 @@ name: Deploy Client to Vercel
 on:
   push:
     branches:
-      - production   # Recommend using 'production' branch for deploys
+      - production
     paths:
-      - 'client/**'  # Only trigger if client app changes
+      - 'client/**'
   pull_request:
     branches:
       - production
@@ -31,7 +31,7 @@ jobs:
         working-directory: ./client
 
       - name: Build Angular Client
-        run: npm run build  # adjust if you use custom build script
+        run: npm run build
         working-directory: ./client
 
       - name: Deploy to Vercel
