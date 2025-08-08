@@ -35,7 +35,7 @@ jobs:
         working-directory: ./client
 
       - name: Deploy to Vercel
-        uses: vercel/action@v2
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
