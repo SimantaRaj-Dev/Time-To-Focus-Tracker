@@ -22,9 +22,3 @@ export enum SessionStatus {
   COMPLETED = 'completed',
   CANCELLED = 'cancelled'
 }
-
-// Helpers for components
-export const toFocusedMinutes   = (s: FocusSession): number => Math.round(s.focusedTimeInSeconds / 60);
-export const toDistractedMinutes = (s: FocusSession): number => Math.round(s.distractedTimeInSeconds / 60);
-
-
