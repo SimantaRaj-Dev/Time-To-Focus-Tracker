@@ -1,7 +1,7 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';
-import { DbService } from './db.service';
+import { DbService } from '../db/db.service';
 import { TabTrackingService } from './tab-tracking.service';
 import { FocusSession, SessionStatus } from '../models/focus-session.model';
 import { FocusDomainsService } from './focus-domains.service';

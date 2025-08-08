@@ -3,7 +3,7 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import Chart, { TooltipItem } from 'chart.js/auto';
 import 'chartjs-adapter-date-fns';
-import { DbService } from '../../services/db.service';
+import { DbService } from '../../db/db.service';
 import { FocusSession } from '../../models/focus-session.model';
 import { TabEvent } from '../../models/tab-event.model';
 
