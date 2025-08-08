@@ -5,6 +5,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:ssr": "ng build && ng run time-to-focus-pwa-app:build:production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:time-to-focus-pwa-app": "node dist/time-to-focus-pwa-app/server/server.mjs"
