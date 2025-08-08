@@ -1,4 +1,3 @@
-// client/src/app/services/focus-domains.service.ts
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { BehaviorSubject } from 'rxjs';

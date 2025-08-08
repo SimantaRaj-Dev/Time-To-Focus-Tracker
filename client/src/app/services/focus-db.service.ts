@@ -1,4 +1,3 @@
-// client/src/app/services/focus-db.service.ts
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { openDB, DBSchema, IDBPDatabase } from 'idb';

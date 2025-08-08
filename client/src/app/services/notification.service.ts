@@ -1,5 +1,3 @@
-// src/app/services/notification.service.ts
-
 import { Injectable } from '@angular/core';
 import { TabTrackingService } from './tab-tracking.service';
 
